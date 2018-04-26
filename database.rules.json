@@ -1,0 +1,100 @@
+{
+  "rules": {
+    "users": {
+      ".read": true,
+        
+      "$uid": {
+      	".write": "auth != null && auth.uid == $uid",
+          
+        ".validate" : "
+        	newData.hasChildren(['email', 'nickname', 'firstname', 'lastname', 'registrationDate', 'rating']) &&
+          newData.child('email').isString() && 
+          newData.child('nickname').isString() && 
+          newData.child('firstname').isString() && 
+          newData.child('lastname').isString() && 
+          newData.child('registrationDate').isNumber()&& 
+          newData.child('rating').isNumber()"
+      }
+    },
+    "user_library": {
+      ".read": true,
+        
+      "$entry": {
+        ".write": "auth != null && 
+        	(
+          	newData.child('user_id').val() == auth.uid ||
+          	(!newData.exists() && data.child('user_id').val() == auth.uid)
+          )",
+          
+        ".validate" : "
+        	newData.hasChildren(['user_id', 'resource_id']) &&
+          newData.child('user_id').isString() && 
+          newData.child('resource_id').isString() && 
+            
+          root.child('users').hasChild(newData.child('user_id').val()) &&
+          root.child('resources').hasChild(newData.child('resource_id').val()) "
+      }
+    },
+    "resources": {
+      ".read": true,
+        
+      "$resource": {
+        ".write": "auth != null && (newData.child('user_id').val() == auth.uid)",
+          
+        ".validate" : "
+        	newData.hasChildren(['user_id', 'link', 'topic', 'title', 'rating', 'avgReqTime']) &&
+          newData.child('link').isString() && 
+          newData.child('topic').isString() && 
+          newData.child('title').isString() && 
+          newData.child('user_id').isString() && 
+          newData.child('rating').isNumber() && 
+          newData.child('avgReqTime').isNumber() && 
+            
+          root.child('users').hasChild(newData.child('user_id').val())"
+      }
+    },
+    "recommendations": {
+      ".read": true,
+        
+      "$recommendation": {
+        ".write": "
+        		auth != null &&
+            (
+            	(newData.child('user_id').val() == auth.uid && data.val() == null) || 
+              (newData.exists() && root.child('goals').child(newData.child('goal_id').val()).child('user_id').val() == auth.uid) ||
+              (!newData.exists() && root.child('goals').child(data.child('goal_id').val()).child('user_id').val()  == auth.uid)
+        		)",
+          
+        ".validate" : true
+      }
+    },
+    "goals": {
+      ".read": true,
+        
+      "$goal": {
+        ".write": "auth != null && 
+        	(
+          	newData.child('user_id').val() == auth.uid ||
+          	(!newData.exists() && data.child('user_id').val() === auth.uid)
+          )",
+          
+        ".validate" : "
+        	newData.hasChildren(['user_id', 'title', 'topic', 'description', 'latitude', 'longitude', 'status']) &&
+          newData.child('user_id').isString() && 
+          newData.child('title').isString() && 
+          newData.child('topic').isString() && 
+          newData.child('description').isString() && 
+          newData.child('latitude').isNumber() && 
+          newData.child('longitude').isNumber() && 
+          newData.child('status').isNumber() && 
+            
+          root.child('users').hasChild(newData.child('user_id').val()) &&
+          newData.hasChild('parent_id') ? (
+            root.child('goals').hasChild(newData.child('parent_id').val()) &&
+            root.child('goals').child(newData.child('parent_id').val()).child('user_id').val() == auth.uid
+          )
+          : true"
+      }
+    }
+  }
+}
